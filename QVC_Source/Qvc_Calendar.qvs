@@ -133,7 +133,9 @@ LOAD
     Day(Date)						as $(_fDay),
     Weekday(Date)					as $(_fWeekday),
     Year(AddMonths(Date,$(_monthOffset))) 	as $(_fYear),
-    Month(Date)						as $(_fMonth),
+// Mark Miller (RHS) 2/15/2016
+// By using Dual in the month, the months will be sorted correctly in list boxes - especially useful in Fiscal Calendars that don't start in January
+    Dual(Month(Date), Num(Month(AddMonths(Date,$(_monthOffset)))))	as $(_fMonth),
     'Q' & Ceil(Month(AddMonths(Date,$(_monthOffset))) / 3)		as $(_fQuarter),
     num(Date)					 	as $(_f_DateSerial),
     AutoNumber(MonthStart(Date),'$(_f_MonthSerial)') 	as $(_f_MonthSerial),
@@ -350,6 +352,54 @@ MapSubString('_qvctemp.Calendar.EscapeCharsMap',
 @($(_fieldPrefix)vSetRolling12Modifier)
 >}'
 );
+
+// Mark Miller (RHS) 2/15/2016 - Previous Full Month
+Let $(_fieldPrefix)vSetPreviousFULLMonthModifier = 
+MapSubString('_qvctemp.Calendar.EscapeCharsMap',
+'$(_vClearFieldList)
+$(_f_MonthSerial) = {@(=$(_qvctemp.vMaxModifier) $(_f_MonthSerial)) - 1)}'
+);
+
+Let $(_fieldPrefix)vSetPreviousFULLMonth =
+MapSubString('_qvctemp.Calendar.EscapeCharsMap',
+'{$<
+@($(_fieldPrefix)vSetPreviousFULLMonthModifier)
+>}'
+);
+
+// Mark Miller (RHS) 2/15/2016 - Previous N Full Months
+// Example usage:
+// Count($(Annual_vSetPreviousFULLMonthN(3)) orderNo)	// Count # orders in entire month 3 months prior
+Let $(_fieldPrefix)vSetPreviousFULLMonthNModifier = 
+MapSubString('_qvctemp.Calendar.EscapeCharsMap',
+'$(_vClearFieldList)
+$(_f_MonthSerial) = {@(=$(_qvctemp.vMaxModifier) $(_f_MonthSerial)) - $1)}'
+);
+
+Let $(_fieldPrefix)vSetPreviousFULLMonthN =
+MapSubString('_qvctemp.Calendar.EscapeCharsMap',
+'{$<
+@($(_fieldPrefix)vSetPreviousFULLMonthNModifier($1))
+>}'
+);
+
+// Mark Miller (RHS) 2/15/2016 - Rolling N Full Months
+// Example usage:
+// Count($(Annual_vSetRollingN(3)) orderNo)	// Count # orders for prior 3 months
+Let $(_fieldPrefix)vSetRollingNModifier =
+MapSubString('_qvctemp.Calendar.EscapeCharsMap',
+'$(_vClearFieldList)
+$(_f_MonthSerial) = {">=@(=$(_qvctemp.vMaxModifier) $(_f_MonthSerial)) - ($1 - 1))<=@(=$(_qvctemp.vMaxModifier) $(_f_MonthSerial)))"}'
+);
+
+Let $(_fieldPrefix)vSetRollingN =
+MapSubString('_qvctemp.Calendar.EscapeCharsMap',
+'{$<
+@($(_fieldPrefix)vSetRollingNModifier($1))
+>}'
+);
+
+
 
 // Include possible extension to create additional Set variables.
  $(_qvctemp.v.IncludeExtension);
